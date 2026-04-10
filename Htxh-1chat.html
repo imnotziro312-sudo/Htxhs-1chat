@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Голосовой Чат - Вход и регистрация</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #1e1f22;
+            color: #dbdee1;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Формы входа/регистрации */
+        .auth-container {
+            background: #2b2d31;
+            border-radius: 28px;
+            padding: 32px;
+            width: 90%;
+            max-width: 420px;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.5);
+            border: 1px solid #3c3f45;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 28px;
+            border-bottom: 1px solid #3c3f45;
+        }
+
+        .tab-btn {
+            background: none;
+            padding: 10px 20px;
+            border-radius: 0;
+            color: #949ba4;
+            font-weight: 500;
+        }
+
+        .tab-btn.active {
+            color: #5865f2;
+            border-bottom: 2px solid #5865f2;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .auth-form.hidden {
+            display: none;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-group label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #b5bac1;
+        }
+
+        .input-group input {
+            background: #1e1f22;
+            border: 1px solid #3c3f45;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: white;
+            font-size: 0.9rem;
+            outline: none;
+            transition: 0.1s;
+        }
+
+        .input-group input:focus {
+            border-color: #5865f2;
+        }
+
+        .captcha-box {
+            background: #1e1f22;
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            font-family: monospace;
+            font-size: 1.8rem;
+            letter-spacing: 8px;
+            font-weight: bold;
+            color: #5865f2;
+            user-select: none;
+        }
+
+        .captcha-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .captcha-row input {
+            flex: 1;
+        }
+
+        .refresh-captcha {
+            background: #2c2f36;
+            padding: 10px 16px;
+            font-size: 1.2rem;
+        }
+
+        button {
+            background: #5865f2;
+            border: none;
+            color: white;
+            font-weight: bold;
+            padding: 12px;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.1s;
+            font-size: 0.9rem;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        .error-msg {
+            color: #ed4245;
+            font-size: 0.75rem;
+            text-align: center;
+        }
+
+        .success-msg {
+            color: #23a55a;
+            font-size: 0.75rem;
+            text-align: center;
+        }
+
+        /* Чат (скрыт пока не вошли) */
+        .chat-app {
+            width: 100%;
+            max-width: 500px;
+            height: 90vh;
+            background: #2b2d31;
+            border-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.4);
+            border: 1px solid #1e1f22;
+        }
+
+        .header {
+            background: #1e1f22;
+            padding: 16px 20px;
+            border-bottom: 1px solid #111214;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        .header h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .status {
+            font-size: 0.75rem;
+            background: #23a55a;
+            padding: 4px 10px;
+            border-radius: 40px;
+        }
+
+        .logout-btn {
+            background: #2c2f36;
+            padding: 6px 12px;
+            font-size: 0.7rem;
+        }
+
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-width: 85%;
+            background: #2b2d31;
+            border-radius: 18px;
+            padding: 8px 14px;
+            border: 1px solid #3c3f45;
+            align-self: flex-start;
+        }
+
+        .message.own {
+            align-self: flex-end;
+            background: #404249;
+            border-color: #5d5f6b;
+        }
+
+        .message-name {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #b5bac1;
+        }
+
+        .message-text {
+            font-size: 0.95rem;
+            word-wrap: break-word;
+        }
+
+        .message-time {
+            font-size: 0.65rem;
+            color: #80848e;
+            text-align: right;
+        }
+
+        .audio-msg {
+            background: #1e1f22;
+            border-radius: 30px;
+            padding: 8px 12px;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        audio {
+            max-width: 180px;
+            height: 32px;
+            border-radius: 20px;
+        }
+
+        .voice-badge {
+            font-size: 0.7rem;
+            background: #23a55a20;
+            padding: 2px 8px;
+            border-radius: 30px;
+        }
+
+        .input-panel {
+            background: #1e1f22;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-top: 1px solid #111214;
+        }
+
+        .text-input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .text-input-row input {
+            flex: 1;
+            background: #383a40;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 40px;
+            color: white;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .voice-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .record-btn {
+            background: #ed4245;
+            padding: 10px 18px;
+        }
+
+        .record-btn.recording {
+            background: #ff6b6f;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .status-voice {
+            font-size: 0.75rem;
+            background: #00000055;
+            padding: 6px 12px;
+            border-radius: 40px;
+        }
+
+        hr {
+            border-color: #3c3f45;
+        }
+
+        .footer-note {
+            font-size: 0.6rem;
+            text-align: center;
+            color: #5d5f6b;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Формы авторизации -->
+    <div id="authContainer" class="auth-container">
+        <div class="auth-tabs">
+            <button class="tab-btn active" data-tab="login">🔐 Вход</button>
+            <button class="tab-btn" data-tab="register">📝 Регистрация</button>
+        </div>
+
+        <!-- Форма входа -->
+        <div id="loginForm" class="auth-form">
+            <div class="input-group">
+                <label>👤 Логин</label>
+                <input type="text" id="loginUsername" placeholder="Введите логин">
+            </div>
+            <div class="input-group">
+                <label>🔒 Пароль</label>
+                <input type="password" id="loginPassword" placeholder="Пароль">
+            </div>
+            <div class="input-group">
+                <label>🔐 Капча</label>
+                <div class="captcha-box" id="loginCaptchaDisplay">A3F9</div>
+                <div class="captcha-row">
+                    <input type="text" id="loginCaptchaInput" placeholder="Введите код с картинки">
+                    <button type="button" class="refresh-captcha" onclick="refreshLoginCaptcha()">🔄</button>
+                </div>
+            </div>
+            <button id="doLoginBtn">Войти в чат</button>
+            <div id="loginError" class="error-msg"></div>
+        </div>
+
+        <!-- Форма регистрации -->
+        <div id="registerForm" class="auth-form hidden">
+            <div class="input-group">
+                <label>👤 Логин (от 3 до 20 символов)</label>
+                <input type="text" id="regUsername" placeholder="Придумайте логин">
+            </div>
+            <div class="input-group">
+                <label>🔒 Пароль (от 4 символов)</label>
+                <input type="password" id="regPassword" placeholder="Пароль">
+            </div>
+            <div class="input-group">
+                <label>🔐 Капча</label>
+                <div class="captcha-box" id="regCaptchaDisplay">X8K2</div>
+                <div class="captcha-row">
+                    <input type="text" id="regCaptchaInput" placeholder="Введите код">
+                    <button type="button" class="refresh-captcha" onclick="refreshRegCaptcha()">🔄</button>
+                </div>
+            </div>
+            <button id="doRegisterBtn">Создать аккаунт</button>
+            <div id="regError" class="error-msg"></div>
+            <div id="regSuccess" class="success-msg"></div>
+        </div>
+    </div>
+
+    <!-- Сам чат (изначально скрыт) -->
+    <div id="chatApp" class="chat-app hidden">
+        <div class="header">
+            <h2>🎙️ ГС-Чат</h2>
+            <div style="display: flex; gap: 8px;">
+                <span class="status">● онлайн</span>
+                <button id="logoutBtn" class="logout-btn">🚪 Выйти</button>
+            </div>
+        </div>
+        <div class="messages-area" id="messagesContainer">
+            <div class="message">
+                <div class="message-name">📢 Система</div>
+                <div class="message-text">Добро пожаловать в защищённый чат!</div>
+                <div class="message-time">только что</div>
+            </div>
+        </div>
+        <div class="input-panel">
+            <div class="text-input-row">
+                <input type="text" id="messageInput" placeholder="Написать сообщение...">
+                <button id="sendTextBtn">➤ Отправить</button>
+            </div>
+            <hr>
+            <div class="voice-row">
+                <button id="recordVoiceBtn" class="record-btn">🎤 Записать голосовое</button>
+                <span id="voiceStatus" class="status-voice">⏺ Готов к записи</span>
+            </div>
+            <div class="footer-note">⚡ Голосовые сообщения — нажми запись, говори, останови → в чат</div>
+        </div>
+    </div>
+
+    <script>
+        // ---------- БАЗА ПОЛЬЗОВАТЕЛЕЙ (localStorage) ----------
+        let users = JSON.parse(localStorage.getItem('voiceChatUsers')) || {};
+        let currentUser = localStorage.getItem('currentChatUser') || null;
+
+        // Переменные капчи
+        let loginCaptchaText = "";
+        let regCaptchaText = "";
+
+        function generateCaptcha() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
+            let captcha = '';
+            for (let i = 0; i < 4; i++) {
+                captcha += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return captcha;
+        }
+
+        function refreshLoginCaptcha() {
+            loginCaptchaText = generateCaptcha();
+            document.getElementById('loginCaptchaDisplay').innerText = loginCaptchaText;
+        }
+
+        function refreshRegCaptcha() {
+            regCaptchaText = generateCaptcha();
+            document.getElementById('regCaptchaDisplay').innerText = regCaptchaText;
+        }
+
+        // Инициализация капч
+        function initCaptchas() {
+            loginCaptchaText = generateCaptcha();
+            regCaptchaText = generateCaptcha();
+            document.getElementById('loginCaptchaDisplay').innerText = loginCaptchaText;
+            document.getElementById('regCaptchaDisplay').innerText = regCaptchaText;
+        }
+
+        // Переключение между формами
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (tab === 'login') {
+                    document.getElementById('loginForm').classList.remove('hidden');
+                    document.getElementById('registerForm').classList.add('hidden');
+                    refreshLoginCaptcha();
+                } else {
+                    document.getElementById('loginForm').classList.add('hidden');
+                    document.getElementById('registerForm').classList.remove('hidden');
+                    refreshRegCaptcha();
+                }
+                document.getElementById('loginError').innerText = '';
+                document.getElementById('regError').innerText = '';
+                document.getElementById('regSuccess').innerText = '';
+            });
+        });
+
+        // Регистрация
+        document.getElementById('doRegisterBtn').addEventListener('click', () => {
+            const username = document.getElementById('regUsername').value.trim();
+            const password = document.getElementById('regPassword').value.trim();
+            const captchaInput = document.getElementById('regCaptchaInput').value.trim();
+            const errorDiv = document.getElementById('regError');
+            const successDiv = document.getElementById('regSuccess');
+
+            errorDiv.innerText = '';
+            successDiv.innerText = '';
+
+            if (!username || !password) {
+                errorDiv.innerText = '❌ Заполните все поля';
+                return;
+            }
+            if (username.length < 3 || username.length > 20) {
+                errorDiv.innerText = '❌ Логин от 3 до 20 символов';
+                return;
+            }
+            if (password.length < 4) {
+                errorDiv.innerText = '❌ Пароль минимум 4 символа';
+                return;
+            }
+            if (captchaInput !== regCaptchaText) {
+                errorDiv.innerText = '❌ Неверная капча';
+                refreshRegCaptcha();
+                document.getElementById('regCaptchaInput').value = '';
+                return;
+            }
+            if (users[username]) {
+                errorDiv.innerText = '❌ Пользователь уже существует';
+                return;
+            }
+
+            users[username] = { password: password };
+            localStorage.setItem('voiceChatUsers', JSON.stringify(users));
+            successDiv.innerText = '✅ Регистрация успешна! Теперь войдите.';
+            document.getElementById('regUsername').value = '';
+            document.getElementById('regPassword').value = '';
+            document.getElementById('regCaptchaInput').value = '';
+            refreshRegCaptcha();
+
+            // переключим на вход через 1 секунду
+            setTimeout(() => {
+                document.querySelector('.tab-btn[data-tab="login"]').click();
+            }, 1200);
+        });
+
+        // Вход
+        document.getElementById('doLoginBtn').addEventListener('click', () => {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const captchaInput = document.getElementById('loginCaptchaInput').value.trim();
+            const errorDiv = document.getElementById('loginError');
+
+            errorDiv.innerText = '';
+
+            if (!username || !password) {
+                errorDiv.innerText = '❌ Введите логин и пароль';
+                return;
+            }
+            if (captchaInput !== loginCaptchaText) {
+                errorDiv.innerText = '❌ Неверная капча';
+                refreshLoginCaptcha();
+                document.getElementById('loginCaptchaInput').value = '';
+                return;
+            }
+            if (!users[username]) {
+                errorDiv.innerText = '❌ Пользователь не найден';
+                return;
+            }
+            if (users[username].password !== password) {
+                errorDiv.innerText = '❌ Неверный пароль';
+                return;
+            }
+
+            // Успешный вход
+            currentUser = username;
+            localStorage.setItem('currentChatUser', currentUser);
+            showChatInterface();
+        });
+
+        // Выход
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('currentChatUser');
+            document.getElementById('chatApp').classList.add('hidden');
+            document.getElementById('authContainer').classList.remove('hidden');
+            // Очищаем сообщения чата
+            document.getElementById('messagesContainer').innerHTML = `
+                <div class="message">
+                    <div class="message-name">📢 Система</div>
+                    <div class="message-text">Добро пожаловать в защищённый чат!</div>
+                    <div class="message-time">только что</div>
+                </div>
+            `;
+            // Сброс полей входа
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginCaptchaInput').value = '';
+            refreshLoginCaptcha();
+        }
+
+        // Показать интерфейс чата
+        function showChatInterface() {
+            document.getElementById('authContainer').classList.add('hidden');
+            document.getElementById('chatApp').classList.remove('hidden');
+            initChatFeatures();
+        }
+
+        // Если уже залогинен при загрузке
+        if (currentUser && users[currentUser]) {
+            showChatInterface();
+        } else {
+            localStorage.removeItem('currentChatUser');
+            initCaptchas();
+        }
+
+        // ---------- ЛОГИКА ЧАТА (текст + голосовые) ----------
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+        let stream = null;
+
+        function initChatFeatures() {
+            const messagesContainer = document.getElementById('messagesContainer');
+            const messageInput = document.getElementById('messageInput');
+            const sendTextBtn = document.getElementById('sendTextBtn');
+            const recordBtn = document.getElementById('recordVoiceBtn');
+            const voiceStatusSpan = document.getElementById('voiceStatus');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            // Загружаем историю сообщений этого пользователя
+            let chatHistory = JSON.parse(localStorage.getItem(`chatHistory_${currentUser}`)) || [];
+            messagesContainer.innerHTML = '';
+            // Добавляем системное приветствие
+            addMessageToUI("📢 Система", "Вы вошли в чат! Пишите текст и отправляйте голосовые 🎤", false, null, messagesContainer);
+            // Восстанавливаем историю
+            chatHistory.forEach(msg => {
+                addMessageToUI(msg.sender, msg.text, msg.isAudio, msg.audioUrl, messagesContainer);
+            });
+
+            function saveMessageToHistory(sender, text, isAudio, audioUrl) {
+                let history = JSON.parse(localStorage.getItem(`chatHistory_${currentUser}`)) || [];
+                history.push({ sender, text, isAudio, audioUrl, timestamp: Date.now() });
+                if (history.length > 100) history.shift();
+                localStorage.setItem(`chatHistory_${currentUser}`, JSON.stringify(history));
+            }
+
+            function addMessageToUI(senderName, content, isAudio, audioUrl, container) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message';
+                if (senderName === currentUser) {
+                    messageDiv.classList.add('own');
+                }
+                const nameSpan = document.createElement('div');
+                nameSpan.className = 'message-name';
+                nameSpan.innerText = senderName === currentUser ? `${senderName} (Вы)` : senderName;
+                const textSpan = document.createElement('div');
+                textSpan.className = 'message-text';
+                if (!isAudio) {
+                    textSpan.innerText = content;
+                } else {
+                    textSpan.innerHTML = `
+                        <div class="audio-msg">
+                            <span class="voice-badge">🎙️ Голосовое</span>
+                            <audio controls src="${audioUrl}"></audio>
+                        </div>
+                    `;
+                }
+                const timeSpan = document.createElement('div');
+                timeSpan.className = 'message-time';
+                timeSpan.innerText = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+                messageDiv.appendChild(nameSpan);
+                messageDiv.appendChild(textSpan);
+                messageDiv.appendChild(timeSpan);
+                container.appendChild(messageDiv);
+                messageDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }
+
+            function sendTextMessage() {
+                const text = messageInput.value.trim();
+                if (text === "") return;
+                addMessageToUI(currentUser, text, false, null, messagesContainer);
+                saveMessageToHistory(currentUser, text, false, null);
+                messageInput.value = "";
+            }
+
+            // Запись голосового
+            async function startRecording() {
+                if (isRecording) return;
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) audioChunks.push(event.data);
+                    };
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        addMessageToUI(currentUser, "Голосовое сообщение", true, audioUrl, messagesContainer);
+                        saveMessageToHistory(currentUser, "Голосовое сообщение", true, audioUrl);
+                        voiceStatusSpan.innerHTML = "✅ Голосовое отправлено!";
+                        setTimeout(() => {
+                            if (voiceStatusSpan.innerHTML === "✅ Голосовое отправлено!") 
+                                voiceStatusSpan.innerHTML = "🎙 Готов к записи";
+                        }, 2000);
+                        if (stream) {
+                            stream.getTracks().forEach(track => track.stop());
+                            stream = null;
+                        }
+                        isRecording = false;
+                        recordBtn.classList.remove('recording');
+                        recordBtn.innerHTML = "🎤 Записать голосовое";
+                    };
+                    mediaRecorder.start();
+                    isRecording = true;
+                    recordBtn.classList.add('recording');
+                    recordBtn.innerHTML = "⏹️ Остановить запись";
+                    voiceStatusSpan.innerHTML = "🔴 ИДЁТ ЗАПИСЬ...";
+                } catch (err) {
+                    voiceStatusSpan.innerHTML = "❌ Нет доступа к микрофону!";
+                    alert("Разрешите доступ к микрофону");
+                }
+            }
+
+            function stopRecordingAndSend() {
+                if (!isRecording || !mediaRecorder) return;
+                if (mediaRecorder.state === "recording") mediaRecorder.stop();
+                else resetRecording();
+            }
+
+            function resetRecording() {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
+                }
+                isRecording = false;
+                recordBtn.classList.remove('recording');
+                recordBtn.innerHTML = "🎤 Записать голосовое";
+                voiceStatusSpan.innerHTML = "⏺ Готов к записи";
+            }
+
+            recordBtn.onclick = () => {
+                if (isRecording) stopRecordingAndSend();
+                else startRecording();
+            };
+
+            sendTextBtn.onclick = sendTextMessage;
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendTextMessage();
+            });
+
+            logoutBtn.onclick = () => {
+                logout();
+                if (mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
+                resetRecording();
+            };
+
+            if (!window.MediaRecorder) {
+                voiceStatusSpan.innerHTML = "⚠️ Браузер не поддерживает запись";
+                recordBtn.disabled = true;
+            }
+        }
+    </script>
+</body>
+</html>
