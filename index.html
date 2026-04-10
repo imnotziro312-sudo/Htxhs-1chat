@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DarkChat — Чат с друзьями и звонки</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+        }
+
+        body {
+            background: #0a0c10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Основной контейнер */
+        .app-container {
+            width: 100%;
+            max-width: 1400px;
+            height: 90vh;
+            background: #111418;
+            border-radius: 32px;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.2s;
+        }
+
+        /* Стили форм (логин/регистрация) */
+        .auth-panel {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(2px);
+        }
+
+        .auth-card {
+            background: #1e1f2c;
+            border-radius: 36px;
+            padding: 40px 32px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.5);
+            border: 1px solid #2c2f3f;
+        }
+
+        .auth-card h2 {
+            color: #f0f3fa;
+            font-weight: 600;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .auth-card p {
+            color: #8e92a8;
+            margin-bottom: 28px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            color: #b9bedb;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .input-group input {
+            width: 100%;
+            background: #0f1119;
+            border: 1px solid #2a2e3f;
+            padding: 14px 18px;
+            border-radius: 24px;
+            color: white;
+            font-size: 15px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: #6c5ce7;
+            box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.3);
+        }
+
+        .captcha-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .captcha-code {
+            background: #0b0e16;
+            padding: 12px 16px;
+            border-radius: 24px;
+            font-family: monospace;
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            color: #c7e9ff;
+            border: 1px solid #3c3f55;
+            text-align: center;
+            flex: 1;
+        }
+
+        .captcha-input {
+            flex: 2;
+        }
+
+        .btn {
+            width: 100%;
+            background: #6c5ce7;
+            border: none;
+            padding: 14px;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 16px;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 8px;
+        }
+
+        .btn-secondary {
+            background: #2d2f42;
+            margin-top: 12px;
+        }
+
+        .btn-secondary:hover {
+            background: #3d3f5a;
+        }
+
+        .btn:hover {
+            background: #5b4bcf;
+            transform: scale(0.98);
+        }
+
+        .error-msg {
+            color: #ff7b72;
+            font-size: 13px;
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        /* Основной интерфейс чата */
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #0e1117;
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 28px;
+            background: #0c0f14;
+            border-bottom: 1px solid #252a36;
+        }
+
+        .user-greeting {
+            color: white;
+            font-weight: 500;
+        }
+
+        .user-greeting span {
+            color: #9b8cff;
+        }
+
+        .logout-btn {
+            background: #2d2f42;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 60px;
+            color: #ffb7b2;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .chat-layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Список друзей (онлайн-юзеры) */
+        .friends-sidebar {
+            width: 280px;
+            background: #0b0e13;
+            border-right: 1px solid #20242e;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 12px;
+        }
+
+        .friends-sidebar h3 {
+            color: #ccd6f0;
+            font-size: 16px;
+            margin-bottom: 16px;
+            padding-left: 8px;
+        }
+
+        .friends-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .friend-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 12px;
+            margin-bottom: 6px;
+            border-radius: 20px;
+            background: #12161f;
+            transition: 0.1s;
+            cursor: pointer;
+        }
+
+        .friend-item.active-chat {
+            background: #2c254d;
+            border-left: 3px solid #9b8cff;
+        }
+
+        .friend-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .friend-name {
+            color: #eef2ff;
+            font-weight: 500;
+        }
+
+        .friend-status {
+            font-size: 11px;
+            color: #4caf7f;
+        }
+
+        .call-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .call-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: 0.1s;
+        }
+
+        /* Область чата */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #0e1117;
+        }
+
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 10px 16px;
+            border-radius: 24px;
+            font-size: 14px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .my-message {
+            background: #6c5ce7;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 6px;
+        }
+
+        .friend-message {
+            background: #232634;
+            color: #e2e8f0;
+            align-self: flex-start;
+            border-bottom-left-radius: 6px;
+        }
+
+        .message-input-area {
+            padding: 16px 20px;
+            background: #0a0d12;
+            display: flex;
+            gap: 12px;
+            border-top: 1px solid #20242e;
+        }
+
+        .message-input-area input {
+            flex: 1;
+            background: #1a1e2a;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 40px;
+            color: white;
+            outline: none;
+        }
+
+        .send-msg-btn {
+            background: #6c5ce7;
+            border: none;
+            padding: 0 24px;
+            border-radius: 40px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+        }
+
+        /* Звонок модальное окно (симуляция WebRTC) */
+        .call-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .call-card {
+            background: #1c1f2c;
+            width: 320px;
+            border-radius: 48px;
+            padding: 28px;
+            text-align: center;
+            border: 1px solid #42486b;
+        }
+
+        .call-card h3 {
+            color: white;
+            margin-bottom: 12px;
+        }
+
+        .call-card p {
+            color: #9aa2c0;
+            margin-bottom: 24px;
+        }
+
+        .call-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+
+        .answer-call {
+            background: #4caf50;
+            padding: 10px 24px;
+            border-radius: 40px;
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .reject-call {
+            background: #d32f2f;
+            padding: 10px 24px;
+            border-radius: 40px;
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .incoming-ring {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        .hide {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container" id="appRoot">
+    <!-- Панель авторизации (регистрация + логин) будет динамически -->
+</div>
+
+<script>
+    // -------- Хранилище пользователей (localStorage) ----------
+    const USERS_KEY = "darkchat_users";
+    const SESSION_KEY = "darkchat_session";
+
+    // Загружаем базу юзеров
+    let users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+
+    // Текущий сеанс
+    let currentUser = null;
+    let currentFriend = null;   // выбранный друг для чата
+
+    // Данные чатов: messages[username][friendUsername] = массив сообщений
+    let allMessages = JSON.parse(localStorage.getItem("darkchat_messages")) || {};
+
+    // Состояние звонка (симуляция peer-to-peer, просто уведомление с модалкой)
+    let activeCall = null;  // { from, to, isActive }
+    let callTimeout = null;
+
+    // Функция сохранения сообщений
+    function saveMessages() {
+        localStorage.setItem("darkchat_messages", JSON.stringify(allMessages));
+    }
+
+    // Получить сообщения между двумя юзерами
+    function getMessages(userA, userB) {
+        const key1 = `${userA}__${userB}`;
+        const key2 = `${userB}__${userA}`;
+        if(allMessages[key1]) return allMessages[key1];
+        if(allMessages[key2]) return allMessages[key2];
+        // создать пустой массив
+        allMessages[key1] = [];
+        return allMessages[key1];
+    }
+
+    function addMessage(from, to, text) {
+        const key = `${from}__${to}`;
+        if(!allMessages[key]) allMessages[key] = [];
+        allMessages[key].push({ from, text, time: Date.now() });
+        saveMessages();
+        // Также сохраняем зеркально для удобства, но чтобы отображать у получателя
+        const revKey = `${to}__${from}`;
+        if(!allMessages[revKey]) allMessages[revKey] = [];
+        allMessages[revKey].push({ from, text, time: Date.now() });
+        saveMessages();
+        // Обновить UI если активный диалог
+        if(currentUser && currentFriend && ((from === currentUser && to === currentFriend) || (from === currentFriend && to === currentUser))) {
+            renderChatMessages();
+        }
+        // Обновить список друзей (индикаторы сообщений)
+        if(currentUser) renderFriendsList();
+    }
+
+    // ------------------- Капча (простая генерация) ----------------
+    function generateCaptcha() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+        let captcha = '';
+        for(let i=0; i<6; i++) captcha += chars[Math.floor(Math.random() * chars.length)];
+        return captcha;
+    }
+
+    // Рендер авторизации (регистрация/вход)
+    function renderAuth() {
+        const root = document.getElementById('appRoot');
+        let captchaStr = generateCaptcha();
+        root.innerHTML = `
+            <div class="auth-panel">
+                <div class="auth-card">
+                    <h2>DarkChat</h2>
+                    <p>Черный чат • звонки • друзья</p>
+                    <div id="authTabs">
+                        <button id="showLoginBtn" class="btn" style="background:#3a3b55; margin-bottom:12px;">Вход</button>
+                        <button id="showRegisterBtn" class="btn btn-secondary">Регистрация</button>
+                    </div>
+                    <div id="authFormContainer">
+                        <!-- форма входа по умолчанию -->
+                    </div>
+                    <div id="authError" class="error-msg"></div>
+                </div>
+            </div>
+        `;
+        const loginBtn = document.getElementById('showLoginBtn');
+        const regBtn = document.getElementById('showRegisterBtn');
+        const container = document.getElementById('authFormContainer');
+        const errorDiv = document.getElementById('authError');
+
+        function renderLogin() {
+            container.innerHTML = `
+                <div class="input-group"><label>Логин</label><input id="loginUsername" placeholder="username" autocomplete="off"></div>
+                <div class="input-group"><label>Пароль</label><input id="loginPassword" type="password" placeholder="••••••"></div>
+                <button id="doLoginBtn" class="btn">Войти в чат</button>
+            `;
+            document.getElementById('doLoginBtn')?.addEventListener('click', () => {
+                const username = document.getElementById('loginUsername').value.trim();
+                const pwd = document.getElementById('loginPassword').value;
+                const user = users.find(u => u.username === username && u.password === pwd);
+                if(user) {
+                    currentUser = username;
+                    localStorage.setItem(SESSION_KEY, username);
+                    errorDiv.innerText = '';
+                    renderChatUI();
+                } else {
+                    errorDiv.innerText = 'Неверный логин или пароль';
+                }
+            });
+        }
+
+        function renderRegister() {
+            let currentCaptcha = generateCaptcha();
+            container.innerHTML = `
+                <div class="input-group"><label>Логин</label><input id="regUsername" placeholder="от 3 до 16 символов"></div>
+                <div class="input-group"><label>Пароль</label><input id="regPassword" type="password" placeholder="минимум 4 символа"></div>
+                <div class="captcha-row">
+                    <div class="captcha-code" id="captchaCode">${currentCaptcha}</div>
+                    <div class="captcha-input"><input id="captchaInput" placeholder="введите код"></div>
+                </div>
+                <button id="doRegisterBtn" class="btn">Создать аккаунт</button>
+                <button id="refreshCaptchaBtn" class="btn btn-secondary" style="margin-top:8px;">🔄 Обновить капчу</button>
+            `;
+            const refreshBtn = document.getElementById('refreshCaptchaBtn');
+            refreshBtn?.addEventListener('click', () => {
+                const newCap = generateCaptcha();
+                document.getElementById('captchaCode').innerText = newCap;
+            });
+            document.getElementById('doRegisterBtn')?.addEventListener('click', () => {
+                const username = document.getElementById('regUsername').value.trim();
+                const password = document.getElementById('regPassword').value;
+                const captchaInput = document.getElementById('captchaInput').value;
+                const captchaText = document.getElementById('captchaCode').innerText;
+                if(username.length < 3 || username.length > 16) { errorDiv.innerText = 'Логин 3-16 символов'; return; }
+                if(password.length < 4) { errorDiv.innerText = 'Пароль минимум 4 символа'; return; }
+                if(captchaInput !== captchaText) { errorDiv.innerText = 'Капча неверна'; return; }
+                if(users.find(u => u.username === username)) { errorDiv.innerText = 'Пользователь уже существует'; return; }
+                users.push({ username, password });
+                localStorage.setItem(USERS_KEY, JSON.stringify(users));
+                errorDiv.innerText = '✅ Регистрация успешна! Теперь войдите.';
+                renderLogin();
+            });
+        }
+
+        loginBtn.onclick = () => { renderLogin(); errorDiv.innerText = ''; };
+        regBtn.onclick = () => { renderRegister(); errorDiv.innerText = ''; };
+        renderLogin();
+    }
+
+    // Основной чат интерфейс
+    function renderChatUI() {
+        const root = document.getElementById('appRoot');
+        root.innerHTML = `
+            <div class="chat-main">
+                <div class="chat-header">
+                    <div class="user-greeting">🔮 DarkChat · <span>${currentUser}</span></div>
+                    <button class="logout-btn" id="logoutBtn">🚪 Выйти</button>
+                </div>
+                <div class="chat-layout">
+                    <div class="friends-sidebar">
+                        <h3>👥 Друзья онлайн (все пользователи)</h3>
+                        <div class="friends-list" id="friendsListContainer">
+                            <!-- динамический список -->
+                        </div>
+                    </div>
+                    <div class="chat-area">
+                        <div class="messages-area" id="chatMessagesArea">
+                            <div style="text-align:center;color:#6c7293;padding:40px;">Выберите друга для переписки</div>
+                        </div>
+                        <div class="message-input-area">
+                            <input type="text" id="messageInput" placeholder="Сообщение..." autocomplete="off">
+                            <button class="send-msg-btn" id="sendMsgBtn">Отправить</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('logoutBtn')?.addEventListener('click', () => {
+            currentUser = null;
+            currentFriend = null;
+            localStorage.removeItem(SESSION_KEY);
+            renderAuth();
+        });
+
+        renderFriendsList();
+        document.getElementById('sendMsgBtn')?.addEventListener('click', () => {
+            const input = document.getElementById('messageInput');
+            if(input && currentFriend && input.value.trim()) {
+                addMessage(currentUser, currentFriend, input.value.trim());
+                input.value = '';
+            }
+        });
+        const msgInput = document.getElementById('messageInput');
+        if(msgInput) {
+            msgInput.addEventListener('keypress', (e) => {
+                if(e.key === 'Enter') document.getElementById('sendMsgBtn').click();
+            });
+        }
+    }
+
+    function renderFriendsList() {
+        const container = document.getElementById('friendsListContainer');
+        if(!container) return;
+        const otherUsers = users.filter(u => u.username !== currentUser);
+        if(otherUsers.length === 0) {
+            container.innerHTML = '<div style="color:#6c7293; padding:12px;">Нет других пользователей. Зарегистрируйте друзей.</div>';
+            return;
+        }
+        container.innerHTML = '';
+        otherUsers.forEach(friend => {
+            const friendDiv = document.createElement('div');
+            friendDiv.className = `friend-item ${currentFriend === friend.username ? 'active-chat' : ''}`;
+            friendDiv.innerHTML = `
+                <div class="friend-info">
+                    <div class="friend-name">${friend.username}</div>
+                    <div class="friend-status">🟢 онлайн</div>
+                </div>
+                <div class="call-actions">
+                    <button class="call-btn" data-call="audio" title="Аудиозвонок">🎙️</button>
+                    <button class="call-btn" data-call="video" title="Видеозвонок (симуляция)">📹</button>
+                </div>
+            `;
+            friendDiv.addEventListener('click', (e) => {
+                if(e.target.classList.contains('call-btn')) return;
+                currentFriend = friend.username;
+                renderFriendsList();  // обновить active стиль
+                renderChatMessages();
+            });
+            const audioBtn = friendDiv.querySelector('[data-call="audio"]');
+            const videoBtn = friendDiv.querySelector('[data-call="video"]');
+            audioBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                initiateCall(friend.username, 'audio');
+            });
+            videoBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                initiateCall(friend.username, 'video');
+            });
+            container.appendChild(friendDiv);
+        });
+    }
+
+    function renderChatMessages() {
+        const messagesDiv = document.getElementById('chatMessagesArea');
+        if(!messagesDiv || !currentFriend) {
+            if(messagesDiv) messagesDiv.innerHTML = '<div style="text-align:center;color:#6c7293;">Выберите собеседника</div>';
+            return;
+        }
+        const msgs = getMessages(currentUser, currentFriend);
+        if(msgs.length === 0) {
+            messagesDiv.innerHTML = '<div style="text-align:center;color:#6c7293;">✉️ Нет сообщений. Напишите что-нибудь!</div>';
+            return;
+        }
+        messagesDiv.innerHTML = '';
+        msgs.forEach(msg => {
+            const bubble = document.createElement('div');
+            bubble.className = `message-bubble ${msg.from === currentUser ? 'my-message' : 'friend-message'}`;
+            bubble.innerHTML = `<strong>${msg.from === currentUser ? 'Вы' : msg.from}</strong><br>${escapeHtml(msg.text)}`;
+            messagesDiv.appendChild(bubble);
+        });
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if(m === '&') return '&amp;';
+            if(m === '<') return '&lt;';
+            if(m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // Звонки (симуляция WebRTC, для GitHubPages демо - всплывающее окно)
+    function initiateCall(friendUsername, type) {
+        if(!currentUser) return;
+        if(activeCall) {
+            alert("Уже есть активный звонок, завершите его");
+            return;
+        }
+        // симуляция исходящего вызова
+        activeCall = { from: currentUser, to: friendUsername, type, status: 'calling' };
+        showCallModal(`📞 Исходящий звонок ${type === 'audio' ? '🎙️ аудио' : '📹 видео'} для ${friendUsername}`, true, friendUsername);
+        // таймер автоответа через 2 секунды (демо)
+        if(callTimeout) clearTimeout(callTimeout);
+        callTimeout = setTimeout(() => {
+            if(activeCall && activeCall.to === friendUsername && activeCall.status === 'calling') {
+                // автоматически "друг отвечает"
+                acceptCall(friendUsername);
+            }
+        }, 2000);
+    }
+
+    function showCallModal(message, isOutgoing = false, friendName = null) {
+        // Удаляем старый оверлей если есть
+        const existing = document.querySelector('.call-overlay');
+        if(existing) existing.remove();
+        const overlay = document.createElement('div');
+        overlay.className = 'call-overlay';
+        overlay.innerHTML = `
+            <div class="call-card">
+                <h3>${isOutgoing ? '📞 Звонок...' : '🔔 Входящий вызов'}</h3>
+                <p>${message}</p>
+                <div class="call-buttons" id="callActions">
+                    ${!isOutgoing ? '<button class="answer-call" id="acceptCallBtn">Принять</button><button class="reject-call" id="rejectCallBtn">Отклонить</button>' : '<button class="reject-call" id="cancelCallBtn">Отменить</button>'}
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        if(!isOutgoing) {
+            document.getElementById('acceptCallBtn')?.addEventListener('click', () => {
+                if(activeCall && activeCall.from === friendName) {
+                    acceptCall(friendName);
+                }
+                overlay.remove();
+            });
+            document.getElementById('rejectCallBtn')?.addEventListener('click', () => {
+                if(activeCall && activeCall.from === friendName) activeCall = null;
+                if(callTimeout) clearTimeout(callTimeout);
+                overlay.remove();
+                alert("Звонок отклонён");
+            });
+        } else {
+            document.getElementById('cancelCallBtn')?.addEventListener('click', () => {
+                if(callTimeout) clearTimeout(callTimeout);
+                activeCall = null;
+                overlay.remove();
+                alert("Звонок отменён");
+            });
+        }
+    }
+
+    function acceptCall(friendUsername) {
+        if(!activeCall || activeCall.to !== friendUsername) return;
+        if(callTimeout) clearTimeout(callTimeout);
+        const callType = activeCall.type;
+        activeCall = null;
+        // имитация установленного звонка
+        alert(`✅ Звонок ${callType === 'audio' ? '🎙️ аудио' : '📹 видео'} с ${friendUsername} установлен! (Демо-режим, используйте WebRTC в реальном проекте)`);
+        const overlayCall = document.querySelector('.call-overlay');
+        if(overlayCall) overlayCall.remove();
+        // симулируем завершение звонка через 5 секунд уведомлением
+        setTimeout(() => {
+            alert(`📴 Звонок с ${friendUsername} завершён (демо)`);
+        }, 5000);
+    }
+
+    // Инициализация сессии
+    function init() {
+        const savedSession = localStorage.getItem(SESSION_KEY);
+        if(savedSession && users.find(u => u.username === savedSession)) {
+            currentUser = savedSession;
+            renderChatUI();
+        } else {
+            renderAuth();
+        }
+    }
+
+    // Поддержка обновления списка друзей при изменениях, периодический рендер сообщений (упрощенно)
+    setInterval(() => {
+        if(currentUser && currentFriend) {
+            renderChatMessages();
+            renderFriendsList();  // обновить статусы
+        }
+    }, 1500);
+
+    init();
+</script>
+</body>
+</html>
