@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Htxh-1chat — реальные звонки и чат</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+        }
+
+        body {
+            background: #0a0a0a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        :root {
+            --bg-dark: #0f0f0f;
+            --bg-card: #1a1a1a;
+            --bg-input: #252525;
+            --border: #333;
+            --text: #e0e0e0;
+            --text-dim: #aaa;
+            --accent: #3a6ea5;
+            --accent-hover: #4d7db8;
+            --danger: #9e3a3a;
+            --danger-hover: #b14545;
+            --success: #2e7d64;
+            --online: #2ecc71;
+        }
+
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            background: var(--bg-card);
+            border-radius: 32px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .auth-container, .chat-container {
+            padding: 30px;
+        }
+
+        .auth-box {
+            max-width: 420px;
+            margin: 0 auto;
+            background: var(--bg-dark);
+            padding: 32px;
+            border-radius: 24px;
+            border: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 28px;
+            text-align: center;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #fff, #aaa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .sub {
+            text-align: center;
+            color: var(--text-dim);
+            margin-bottom: 28px;
+            font-size: 14px;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            color: var(--text);
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(58,110,165,0.2);
+        }
+
+        button {
+            background: var(--accent);
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #2c2c2c;
+        }
+        .btn-secondary:hover {
+            background: #3a3a3a;
+        }
+        .btn-danger {
+            background: var(--danger);
+        }
+        .btn-danger:hover {
+            background: var(--danger-hover);
+        }
+
+        .captcha-box {
+            background: #111;
+            padding: 12px;
+            border-radius: 16px;
+            text-align: center;
+            font-family: monospace;
+            font-size: 28px;
+            letter-spacing: 8px;
+            margin-bottom: 12px;
+            color: #eee;
+        }
+
+        .chat-layout {
+            display: flex;
+            height: 70vh;
+            min-height: 500px;
+        }
+
+        .friends-sidebar {
+            width: 280px;
+            background: var(--bg-dark);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .user-info {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            background: #141414;
+        }
+
+        .friend-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .friend-item {
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            transition: 0.1s;
+        }
+        .friend-item:hover {
+            background: #202020;
+        }
+        .friend-name {
+            font-weight: 500;
+        }
+        .online-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #555;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .online-status.online {
+            background: var(--online);
+        }
+        .add-friend-form {
+            padding: 16px;
+            display: flex;
+            gap: 8px;
+        }
+        .add-friend-form input {
+            margin-bottom: 0;
+            flex: 1;
+        }
+        .add-friend-form button {
+            width: auto;
+            padding: 12px 16px;
+            margin-bottom: 0;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-card);
+        }
+
+        .chat-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            background: #151515;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            background: #252525;
+            align-self: flex-start;
+        }
+        .message.own {
+            align-self: flex-end;
+            background: var(--accent);
+        }
+        .message-sender {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+        }
+
+        .message-input-area {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            background: #121212;
+        }
+        .message-input-area input {
+            margin-bottom: 0;
+        }
+        .message-input-area button {
+            width: auto;
+            margin-bottom: 0;
+            padding: 12px 20px;
+        }
+
+        .call-controls {
+            display: flex;
+            gap: 10px;
+        }
+        .call-btn {
+            background: #2c3e2c;
+            width: auto;
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+        .call-btn.active-call {
+            background: var(--danger);
+        }
+
+        .incoming-call {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #1e1e2f;
+            border-radius: 20px;
+            padding: 16px 24px;
+            border-left: 4px solid var(--accent);
+            box-shadow: 0 10px 25px black;
+            z-index: 1000;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 700px) {
+            .chat-layout {
+                flex-direction: column;
+                height: auto;
+            }
+            .friends-sidebar {
+                width: 100%;
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container" id="app">
+    <div id="authSection" class="auth-container">
+        <div class="auth-box">
+            <h1>Htxh-1chat</h1>
+            <div class="sub">Реальные звонки и чат</div>
+            <div id="loginForm">
+                <input type="text" id="loginUsername" placeholder="Имя пользователя">
+                <input type="password" id="loginPassword" placeholder="Пароль">
+                <button id="loginBtn">Войти</button>
+                <button id="showRegisterBtn" class="btn-secondary">Нет аккаунта? Регистрация</button>
+            </div>
+            <div id="registerForm" class="hidden">
+                <input type="text" id="regUsername" placeholder="Имя пользователя">
+                <input type="password" id="regPassword" placeholder="Пароль">
+                <div class="captcha-box" id="captchaDisplay">XXXX</div>
+                <input type="text" id="captchaInput" placeholder="Введите капчу">
+                <button id="registerBtn">Зарегистрироваться</button>
+                <button id="backToLoginBtn" class="btn-secondary">Назад</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="chatSection" class="chat-container hidden">
+        <div class="chat-layout">
+            <div class="friends-sidebar">
+                <div class="user-info">
+                    <strong id="currentUsername"></strong>
+                    <span style="font-size:12px;" id="connectionStatus"> ● соединяемся...</span>
+                    <button id="logoutBtn" class="btn-secondary" style="margin-top:10px; padding:6px;">Выйти</button>
+                </div>
+                <div class="friend-list" id="friendListContainer"></div>
+                <div class="add-friend-form">
+                    <input type="text" id="addFriendInput" placeholder="Имя друга">
+                    <button id="addFriendBtn">+</button>
+                </div>
+            </div>
+            <div class="chat-area">
+                <div class="chat-header">
+                    <div><span id="chatWithLabel">Не выбран друг</span></div>
+                    <div class="call-controls">
+                        <button id="callBtn" class="call-btn" disabled>🎧 Позвонить</button>
+                        <button id="hangupBtn" class="call-btn btn-danger hidden" disabled>📞 Положить трубку</button>
+                    </div>
+                </div>
+                <div class="messages" id="messagesArea">
+                    <div class="message">Выберите друга для переписки</div>
+                </div>
+                <div class="message-input-area">
+                    <input type="text" id="messageInput" placeholder="Сообщение..." disabled>
+                    <button id="sendMsgBtn" disabled>Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="incomingCallModal" class="incoming-call hidden">
+        <div>📞 Входящий звонок от <strong id="callerName"></strong></div>
+        <div style="margin-top:12px; display:flex; gap:10px;">
+            <button id="acceptCallBtn" style="background:#2e7d64;">Принять</button>
+            <button id="rejectCallBtn" class="btn-danger">Отклонить</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== КОНФИГУРАЦИЯ ==========
+    // ЗАМЕНИТЕ НА URL ВАШЕГО SIGNALING СЕРВЕРА (бесплатно на Render/Railway)
+    const SIGNALING_SERVER = 'wss://htxh-signaling.onrender.com'; // <<<--- ВАШ URL
+    
+    let currentUser = null;
+    let currentFriend = null;
+    let ws = null;
+    let peerConnection = null;
+    let localStream = null;
+    let currentCall = null; // { with: string, type: 'outgoing'|'incoming' }
+    
+    // ========== localStorage ==========
+    function getUsers() {
+        return JSON.parse(localStorage.getItem('htxh_users') || '[]');
+    }
+    function saveUsers(users) {
+        localStorage.setItem('htxh_users', JSON.stringify(users));
+    }
+    function initDefaultUsers() {
+        if(!localStorage.getItem('htxh_users')) {
+            const defaultUsers = [
+                { username: 'alex', password: '123', friends: ['maria'], messages: { maria: [] } },
+                { username: 'maria', password: '123', friends: ['alex'], messages: { alex: [] } }
+            ];
+            saveUsers(defaultUsers);
+        }
+    }
+    
+    function findUser(username) {
+        return getUsers().find(u => u.username === username);
+    }
+    
+    function updateCurrentUserInStorage() {
+        const users = getUsers();
+        const index = users.findIndex(u => u.username === currentUser.username);
+        if(index !== -1) {
+            users[index] = currentUser;
+            saveUsers(users);
+        }
+    }
+    
+    // ========== Капча ==========
+    function generateCaptcha() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
+        let captcha = '';
+        for(let i=0; i<5; i++) captcha += chars[Math.floor(Math.random() * chars.length)];
+        return captcha;
+    }
+    let currentCaptcha = '';
+    function refreshCaptcha() {
+        currentCaptcha = generateCaptcha();
+        const captchaElem = document.getElementById('captchaDisplay');
+        if(captchaElem) captchaElem.innerText = currentCaptcha;
+    }
+    
+    // ========== Auth ==========
+    function register(username, password, captchaInput) {
+        if(captchaInput !== currentCaptcha) {
+            alert('Неверная капча');
+            refreshCaptcha();
+            return false;
+        }
+        const users = getUsers();
+        if(users.find(u => u.username === username)) {
+            alert('Пользователь уже существует');
+            refreshCaptcha();
+            return false;
+        }
+        if(username.length < 3 || password.length < 3) {
+            alert('Имя и пароль минимум 3 символа');
+            return false;
+        }
+        const newUser = { username, password, friends: [], messages: {} };
+        users.push(newUser);
+        saveUsers(users);
+        alert('Регистрация успешна! Теперь войдите.');
+        return true;
+    }
+    
+    function login(username, password) {
+        const user = findUser(username);
+        if(user && user.password === password) {
+            currentUser = JSON.parse(JSON.stringify(user));
+            sessionStorage.setItem('htxh_session', username);
+            connectWebSocket();
+            showChatInterface();
+            return true;
+        } else {
+            alert('Неверные имя или пароль');
+            return false;
+        }
+    }
+    
+    function logout() {
+        if(ws) ws.close();
+        if(localStream) localStream.getTracks().forEach(track => track.stop());
+        if(peerConnection) peerConnection.close();
+        sessionStorage.removeItem('htxh_session');
+        currentUser = null;
+        currentFriend = null;
+        showAuthInterface();
+    }
+    
+    // ========== WebSocket Signaling ==========
+    function connectWebSocket() {
+        ws = new WebSocket(SIGNALING_SERVER);
+        ws.onopen = () => {
+            console.log('Connected to signaling server');
+            document.getElementById('connectionStatus').innerHTML = ' ● онлайн';
+            ws.send(JSON.stringify({ type: 'login', username: currentUser.username }));
+        };
+        ws.onmessage = async (event) => {
+            const data = JSON.parse(event.data);
+            await handleSignaling(data);
+        };
+        ws.onclose = () => {
+            console.log('Disconnected, reconnecting in 3s...');
+            document.getElementById('connectionStatus').innerHTML = ' ● офлайн';
+            setTimeout(connectWebSocket, 3000);
+        };
+    }
+    
+    async function handleSignaling(data) {
+        switch(data.type) {
+            case 'user_online':
+                updateFriendOnlineStatus(data.username, true);
+                break;
+            case 'user_offline':
+                updateFriendOnlineStatus(data.username, false);
+                break;
+            case 'call_offer':
+                await handleIncomingCall(data);
+                break;
+            case 'call_answer':
+                await handleCallAnswer(data);
+                break;
+            case 'ice_candidate':
+                if(peerConnection) {
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                }
+                break;
+            case 'call_end':
+                endCall();
+                break;
+        }
+    }
+    
+    function updateFriendOnlineStatus(username, isOnline) {
+        const friendElements = document.querySelectorAll('.friend-item');
+        friendElements.forEach(el => {
+            const nameSpan = el.querySelector('.friend-name');
+            if(nameSpan && nameSpan.innerText === username) {
+                const statusSpan = el.querySelector('.online-status');
+                if(statusSpan) {
+                    if(isOnline) statusSpan.classList.add('online');
+                    else statusSpan.classList.remove('online');
+                }
+            }
+        });
+    }
+    
+    // ========== WebRTC ==========
+    async function startCall(toUser) {
+        if(currentCall) {
+            alert('Уже есть активный звонок');
+            return;
+        }
+        
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            createPeerConnection();
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+            
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            
+            ws.send(JSON.stringify({
+                type: 'call_offer',
+                to: toUser,
+                offer: offer
+            }));
+            
+            currentCall = { with: toUser, type: 'outgoing' };
+            document.getElementById('callBtn').classList.add('hidden');
+            document.getElementById('hangupBtn').classList.remove('hidden');
+            document.getElementById('hangupBtn').disabled = false;
+            
+        } catch(err) {
+            console.error('Error starting call:', err);
+            alert('Не удалось получить доступ к микрофону');
+        }
+    }
+    
+    async function handleIncomingCall(data) {
+        if(currentCall) {
+            ws.send(JSON.stringify({ type: 'call_busy', to: data.from }));
+            return;
+        }
+        
+        currentCall = { with: data.from, type: 'incoming', offer: data.offer };
+        document.getElementById('callerName').innerText = data.from;
+        document.getElementById('incomingCallModal').classList.remove('hidden');
+        
+        // Обработчики кнопок
+        document.getElementById('acceptCallBtn').onclick = async () => {
+            document.getElementById('incomingCallModal').classList.add('hidden');
+            await acceptCall(data.from, data.offer);
+        };
+        document.getElementById('rejectCallBtn').onclick = () => {
+            document.getElementById('incomingCallModal').classList.add('hidden');
+            ws.send(JSON.stringify({ type: 'call_reject', to: data.from }));
+            currentCall = null;
+        };
+    }
+    
+    async function acceptCall(from, offer) {
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            createPeerConnection();
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+            
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            
+            ws.send(JSON.stringify({
+                type: 'call_answer',
+                to: from,
+                answer: answer
+            }));
+            
+            currentCall = { with: from, type: 'active' };
+            document.getElementById('callBtn').classList.add('hidden');
+            document.getElementById('hangupBtn').classList.remove('hidden');
+            document.getElementById('hangupBtn').disabled = false;
+            
+        } catch(err) {
+            console.error('Error accepting call:', err);
+        }
+    }
+    
+    async function handleCallAnswer(data) {
+        if(peerConnection && currentCall && currentCall.type === 'outgoing') {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+            currentCall.type = 'active';
+        }
+    }
+    
+    function createPeerConnection() {
+        peerConnection = new RTCPeerConnection({
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        });
+        
+        peerConnection.ontrack = (event) => {
+            const audio = new Audio();
+            audio.srcObject = event.streams[0];
+            audio.play();
+        };
+        
+        peerConnection.onicecandidate = (event) => {
+            if(event.candidate && currentCall) {
+                ws.send(JSON.stringify({
+                    type: 'ice_candidate',
+                    to: currentCall.with,
+                    candidate: event.candidate
+                }));
+            }
+        };
+        
+        peerConnection.onconnectionstatechange = () => {
+            if(peerConnection.connectionState === 'disconnected' || 
+               peerConnection.connectionState === 'failed' ||
+               peerConnection.connectionState === 'closed') {
+                endCall();
+            }
+        };
+    }
+    
+    function endCall() {
+        if(peerConnection) {
+            peerConnection.close();
+            peerConnection = null;
+        }
+        if(localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+            localStream = null;
+        }
+        if(currentCall && ws) {
+            ws.send(JSON.stringify({ type: 'call_end', to: currentCall.with }));
+        }
+        currentCall = null;
+        
+        document.getElementById('callBtn').classList.remove('hidden');
+        document.getElementById('hangupBtn').classList.add('hidden');
+        document.getElementById('hangupBtn').disabled = true;
+        document.getElementById('incomingCallModal').classList.add('hidden');
+    }
+    
+    // ========== Chat ==========
+    function addFriend(friendName) {
+        if(friendName === currentUser.username) {
+            alert('Нельзя добавить самого себя');
+            return false;
+        }
+        const targetUser = findUser(friendName);
+        if(!targetUser) {
+            alert('Пользователь не найден');
+            return false;
+        }
+        if(currentUser.friends.includes(friendName)) {
+            alert('Уже в друзьях');
+            return false;
+        }
+        currentUser.friends.push(friendName);
+        if(!currentUser.messages[friendName]) currentUser.messages[friendName] = [];
+        updateCurrentUserInStorage();
+        renderFriendsList();
+        return true;
+    }
+    
+    function sendMessage(toFriend, text) {
+        if(!text.trim()) return;
+        const message = { from: currentUser.username, text: text, time: Date.now() };
+        if(!currentUser.messages[toFriend]) currentUser.messages[toFriend] = [];
+        currentUser.messages[toFriend].push(message);
+        updateCurrentUserInStorage();
+        
+        // Отправляем через WebSocket для реального времени
+        if(ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+                type: 'message',
+                to: toFriend,
+                message: message
+            }));
+        }
+        
+        renderMessages(toFriend);
+        document.getElementById('messageInput').value = '';
+    }
+    
+    function receiveMessage(from, message) {
+        if(!currentUser.messages[from]) currentUser.messages[from] = [];
+        currentUser.messages[from].push(message);
+        updateCurrentUserInStorage();
+        
+        if(currentFriend === from) {
+            renderMessages(from);
+        }
+    }
+    
+    function renderFriendsList() {
+        const container = document.getElementById('friendListContainer');
+        if(!container) return;
+        if(!currentUser.friends.length) {
+            container.innerHTML = '<div style="padding:16px;color:#888;">Нет друзей. Добавьте!</div>';
+            return;
+        }
+        container.innerHTML = '';
+        currentUser.friends.forEach(f => {
+            const div = document.createElement('div');
+            div.className = 'friend-item';
+            div.innerHTML = `
+                <div>
+                    <span class="online-status"></span>
+                    <span class="friend-name">${escapeHtml(f)}</span>
+                </div>
+            `;
+            div.onclick = () => openChatWith(f);
+            container.appendChild(div);
+        });
+    }
+    
+    function openChatWith(friendName) {
+        currentFriend = friendName;
+        document.getElementById('chatWithLabel').innerText = `Чат с ${friendName}`;
+        document.getElementById('messageInput').disabled = false;
+        document.getElementById('sendMsgBtn').disabled = false;
+        document.getElementById('callBtn').disabled = false;
+        renderMessages(friendName);
+    }
+    
+    function renderMessages(friendName) {
+        const messagesArea = document.getElementById('messagesArea');
+        if(!messagesArea) return;
+        const msgs = currentUser.messages[friendName] || [];
+        if(msgs.length === 0) {
+            messagesArea.innerHTML = '<div class="message">Нет сообщений. Напишите первым!</div>';
+            return;
+        }
+        messagesArea.innerHTML = '';
+        msgs.forEach(msg => {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${msg.from === currentUser.username ? 'own' : ''}`;
+            msgDiv.innerHTML = `
+                <div class="message-sender">${msg.from === currentUser.username ? 'Вы' : msg.from}</div>
+                <div>${escapeHtml(msg.text)}</div>
+                <div style="font-size:10px;color:#888;margin-top:4px;">${new Date(msg.time).toLocaleTimeString()}</div>
+            `;
+            messagesArea.appendChild(msgDiv);
+        });
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+    }
+    
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if(m === '&') return '&amp;';
+            if(m === '<') return '&lt;';
+            if(m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    // ========== UI ==========
+    function showAuthInterface() {
+        document.getElementById('authSection').classList.remove('hidden');
+        document.getElementById('chatSection').classList.add('hidden');
+        refreshCaptcha();
+    }
+    
+    function showChatInterface() {
+        document.getElementById('authSection').classList.add('hidden');
+        document.getElementById('chatSection').classList.remove('hidden');
+        document.getElementById('currentUsername').innerText = currentUser.username;
+        renderFriendsList();
+        if(currentFriend) renderMessages(currentFriend);
+        else {
+            document.getElementById('messagesArea').innerHTML = '<div class="message">Выберите друга из списка</div>';
+            document.getElementById('messageInput').disabled = true;
+            document.getElementById('sendMsgBtn').disabled = true;
+            document.getElementById('callBtn').disabled = true;
+        }
+    }
+    
+    // ========== Инициализация ==========
+    document.addEventListener('DOMContentLoaded', () => {
+        initDefaultUsers();
+        
+        const savedSession = sessionStorage.getItem('htxh_session');
+        if(savedSession) {
+            const user = findUser(savedSession);
+            if(user) {
+                currentUser = JSON.parse(JSON.stringify(user));
+                connectWebSocket();
+                showChatInterface();
+            } else {
+                showAuthInterface();
+            }
+        } else {
+            showAuthInterface();
+        }
+        
+        // Event listeners
+        document.getElementById('loginBtn').onclick = () => {
+            const user = document.getElementById('loginUsername').value.trim();
+            const pass = document.getElementById('loginPassword').value;
+            login(user, pass);
+        };
+        document.getElementById('showRegisterBtn').onclick = () => {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+            refreshCaptcha();
+        };
+        document.getElementById('backToLoginBtn').onclick = () => {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+        };
+        document.getElementById('registerBtn').onclick = () => {
+            const username = document.getElementById('regUsername').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const captcha = document.getElementById('captchaInput').value.trim();
+            if(register(username, password, captcha)) {
+                document.getElementById('loginForm').classList.remove('hidden');
+                document.getElementById('registerForm').classList.add('hidden');
+                document.getElementById('loginUsername').value = username;
+                document.getElementById('loginPassword').value = password;
+            }
+        };
+        document.getElementById('logoutBtn').onclick = () => logout();
+        document.getElementById('addFriendBtn').onclick = () => {
+            const friendName = document.getElementById('addFriendInput').value.trim();
+            if(friendName) addFriend(friendName);
+            document.getElementById('addFriendInput').value = '';
+        };
+        document.getElementById('sendMsgBtn').onclick = () => {
+            if(currentFriend) sendMessage(currentFriend, document.getElementById('messageInput').value);
+        };
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter' && currentFriend) sendMessage(currentFriend, e.target.value);
+        });
+        document.getElementById('callBtn').onclick = () => {
+            if(currentFriend) startCall(currentFriend);
+        };
+        document.getElementById('hangupBtn').onclick = () => {
+            endCall();
+        };
+    });
+</script>
+</body>
+</html>
